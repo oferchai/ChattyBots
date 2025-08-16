@@ -9,81 +9,73 @@ This document outlines all backend development tasks for the multi-agent AI chat
 ## 🏗️ Phase 1: Core Infrastructure (Foundation)
 
 ### Task 1.1: Database Models & Schema Design
-**Priority: High | Estimated Time: 4-6 hours**
+**Priority: High | Estimated Time: 2-3 hours** (Simplified)
 
 **Description:**
-Design and implement SQLAlchemy models for the core data structures.
+Design and implement simplified SQLAlchemy models for core conversation tracking with agent-user interaction support.
 
 **Components:**
 - `models/base.py` - Base model class with common fields
-- `models/conversation.py` - Conversation sessions and metadata
-- `models/message.py` - Individual messages in conversations
-- `models/agent.py` - Agent definitions and configurations
-- `models/goal.py` - Problem definitions and objectives
-- `models/decision.py` - Final consensus and agreements
-- `models/vote.py` - Agent voting on solutions
+- `models/conversation.py` - Conversation sessions and goal tracking
+- `models/message.py` - All messages (agent-agent, agent-user, user-agent)
+- `agents/config.py` - Static agent configuration (not database)
 
-**Database Schema:**
+**Simplified Database Schema:**
 ```sql
 -- conversations table
 id (UUID, Primary Key)
-title (String, 255)
-goal_description (Text)
-status (Enum: active, completed, failed)
+goal_description (Text) -- User's problem statement
+status (Enum: active, paused, completed) -- paused = waiting for user input
 created_at (DateTime)
 updated_at (DateTime)
-consensus_reached (Boolean)
-final_decision (Text, nullable)
+final_summary (Text, nullable) -- Conclusion when completed
 
--- messages table
+-- messages table  
 id (UUID, Primary Key)
 conversation_id (UUID, Foreign Key)
-agent_id (String)
-content (Text)
-message_type (Enum: proposal, question, response, vote, consensus)
+sender_type (Enum: agent, user) -- Who sent this message
+sender_id (String) -- Agent ID ("project_manager") or "user"
+content (Text) -- Message content
+message_type (Enum: discussion, question_to_user, user_response)
 created_at (DateTime)
-parent_message_id (UUID, nullable) -- for threading
-
--- agents table
-id (String, Primary Key) -- e.g., "project_manager"
-name (String)
-role (String)
-personality_prompt (Text)
-system_prompt (Text)
-is_active (Boolean)
-created_at (DateTime)
-
--- goals table
-id (UUID, Primary Key)
-conversation_id (UUID, Foreign Key)
-description (Text)
-success_criteria (JSON)
-constraints (JSON)
-priority (Integer)
-
--- decisions table
-id (UUID, Primary Key)
-conversation_id (UUID, Foreign Key)
-decision_text (Text)
-confidence_score (Float)
-supporting_votes (Integer)
-created_at (DateTime)
-
--- votes table
-id (UUID, Primary Key)
-conversation_id (UUID, Foreign Key)
-agent_id (String, Foreign Key)
-decision_id (UUID, Foreign Key)
-vote_type (Enum: support, oppose, abstain)
-reasoning (Text)
-created_at (DateTime)
+parent_message_id (UUID, nullable) -- Reply threading
+requires_user_response (Boolean) -- Agent is waiting for user input
 ```
 
+**Agent Configuration (Static - Not Database):**
+```python
+# agents/config.py
+AGENTS = {
+    "project_manager": {
+        "name": "Alex PM",
+        "role": "Project Manager", 
+        "system_prompt": "You facilitate discussions..."
+    },
+    "technical_architect": {
+        "name": "Sam Tech",
+        "role": "Technical Architect",
+        "system_prompt": "You evaluate technical feasibility..."
+    },
+    "creative_strategist": {
+        "name": "Jordan Creative",
+        "role": "Creative Strategist", 
+        "system_prompt": "You generate innovative ideas..."
+    }
+}
+```
+
+**Key Design Benefits:**
+- **Simplified**: Only 2 database tables needed
+- **User Interaction**: Built-in support for agent→user questions
+- **Flexible**: Handles all communication patterns via message_type
+- **State Management**: Conversation status tracks when user input needed
+- **Threading**: Messages can reference parent for context
+
 **Deliverables:**
-- Complete SQLAlchemy models
+- Complete SQLAlchemy models (2 tables)
+- Static agent configuration
 - Database migration scripts
 - Model relationships and constraints
-- Database initialization script
 
 ---
 
@@ -104,20 +96,29 @@ Set up the core FastAPI application with proper structure, middleware, and confi
 
 **API Endpoints Design:**
 ```
-POST /api/conversations - Create new conversation
-GET /api/conversations - List conversations
+# Conversation Management
+POST /api/conversations - Create new conversation with goal
+GET /api/conversations - List conversations with status
 GET /api/conversations/{id} - Get conversation details
-PUT /api/conversations/{id} - Update conversation
+PUT /api/conversations/{id} - Update conversation (pause/resume)
 DELETE /api/conversations/{id} - Delete conversation
+POST /api/conversations/{id}/start - Start agent discussion
 
-POST /api/conversations/{id}/messages - Send message
-GET /api/conversations/{id}/messages - Get conversation messages
+# Message Operations  
+POST /api/conversations/{id}/messages - Send user message or agent response
+GET /api/conversations/{id}/messages - Get all conversation messages
+GET /api/conversations/{id}/messages/pending - Get messages requiring user response
 
-GET /api/agents - List available agents
-POST /api/agents - Create/configure agent
-PUT /api/agents/{id} - Update agent configuration
+# Agent Management (Static Configuration)
+GET /api/agents - List available agents with roles
+GET /api/agents/{id} - Get specific agent details
 
-WebSocket /ws/conversations/{id} - Real-time conversation updates
+# System Operations
+GET /api/health - System health check
+GET /api/status - Conversation and agent status
+
+# Real-time Communication
+WebSocket /ws/conversations/{id} - Real-time message updates and agent activity
 ```
 
 **Deliverables:**
