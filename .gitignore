@@ -69,8 +69,16 @@ Thumbs.db
 # Project specific
 config.ini
 .env
+.env.production
 *.log
 secrets.json
+
+# Environment-specific configuration files
+.env.development
+.env.testing
+.env.production
+config/production.json
+config/secrets.json
 
 # AI/ML specific
 *.pkl
