@@ -86,3 +86,6 @@ config/secrets.json
 models/
 checkpoints/
 wandb/
+
+# Gemini
+.gemini/
