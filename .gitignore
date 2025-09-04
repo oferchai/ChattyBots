@@ -48,7 +48,7 @@ env/
 venv/
 ENV/
 env.bak/
-venv.bak/
+env.bak/
 
 # IDE
 .vscode/
@@ -89,3 +89,6 @@ wandb/
 
 # Gemini
 .gemini/
+
+# Database
+data/chatbot.db

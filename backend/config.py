@@ -16,7 +16,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -89,7 +89,8 @@ class DatabaseSettings(BaseModel):
         description="Echo SQL queries for debugging"
     )
     
-    @validator('url')
+    @field_validator('url')
+    @classmethod
     def validate_database_url(cls, v):
         """Validate database URL format."""
         if not v:
@@ -149,7 +150,8 @@ class SecuritySettings(BaseModel):
         description="Application secret key for JWT/sessions"
     )
     
-    @validator('cors_origins')
+    @field_validator('cors_origins')
+    @classmethod
     def validate_cors_origins(cls, v):
         """Validate CORS origins format."""
         for origin in v:
@@ -197,7 +199,8 @@ class OllamaSettings(BaseModel):
         description="Health check frequency in seconds"
     )
     
-    @validator('base_url')
+    @field_validator('base_url')
+    @classmethod
     def validate_base_url(cls, v):
         """Validate Ollama base URL format."""
         if not v.startswith(('http://', 'https://')):
@@ -249,7 +252,8 @@ class OpenRouterSettings(BaseModel):
         description="Monthly cost limit in USD"
     )
     
-    @validator('api_key')
+    @field_validator('api_key')
+    @classmethod
     def validate_api_key(cls, v):
         """Validate API key format."""
         if v and len(v) < 10:
@@ -446,7 +450,8 @@ class ServerSettings(BaseModel):
         description="SSL certificate file path"
     )
     
-    @validator('port')
+    @field_validator('port')
+    @classmethod
     def validate_port(cls, v):
         """Validate port number."""
         if v < 1000 or v > 65535:
@@ -531,39 +536,29 @@ class Settings(BaseSettings):
         description="Logging configuration"
     )
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        env_nested_delimiter = "__"
-        case_sensitive = False
-        
-        # Allow field population from environment variables
-        @classmethod
-        def customise_sources(
-            cls,
-            init_settings,
-            env_settings,
-            file_secret_settings,
-        ):
-            return (
-                init_settings,
-                env_settings,
-                file_secret_settings,
-            )
+    model_config = ConfigDict(
+        env_file = ".env",
+        env_file_encoding = "utf-8",
+        env_nested_delimiter = "__",
+        case_sensitive = False,
+        extra = "ignore", # Allow extra fields for compatibility
+    )
     
-    @validator('debug')
-    def validate_debug_in_production(cls, v, values):
+    @field_validator('debug')
+    @classmethod
+    def validate_debug_in_production(cls, v, info):
         """Ensure debug is disabled in production."""
-        environment = values.get('environment')
+        environment = info.data.get('environment')
         if environment == Environment.PRODUCTION and v:
             raise ValueError("Debug mode must be disabled in production")
         return v
     
-    @validator('logging')
-    def configure_logging_for_environment(cls, v, values):
+    @field_validator('logging')
+    @classmethod
+    def configure_logging_for_environment(cls, v, info):
         """Configure logging based on environment."""
-        environment = values.get('environment')
-        debug = values.get('debug', True)
+        environment = info.data.get('environment')
+        debug = info.data.get('debug', True)
         
         if environment == Environment.DEVELOPMENT:
             v.level = LogLevel.DEBUG if debug else LogLevel.INFO
@@ -578,10 +573,11 @@ class Settings(BaseSettings):
         
         return v
     
-    @validator('server')
-    def configure_server_for_environment(cls, v, values):
+    @field_validator('server')
+    @classmethod
+    def configure_server_for_environment(cls, v, info):
         """Configure server based on environment."""
-        environment = values.get('environment')
+        environment = info.data.get('environment')
         
         if environment == Environment.DEVELOPMENT:
             v.reload = True
