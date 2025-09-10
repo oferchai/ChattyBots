@@ -19,6 +19,7 @@ from .db import init_database
 from .api import conversations, agents, websockets
 from .middleware.logging import LoggingMiddleware
 from .middleware.error_handler import ErrorHandlerMiddleware
+from .services.llm_service import LLMServiceFactory
 
 # Get application settings
 settings = get_settings()
@@ -171,6 +172,9 @@ async def system_status():
     """
     from .agents import get_agent_ids
     
+    llm_service_factory = LLMServiceFactory(config=settings.llm.model_dump())
+    llm_health = await llm_service_factory.provider.health_check()
+
     return {
         "status": "operational",
         "environment": settings.environment.value,
@@ -183,7 +187,8 @@ async def system_status():
             "provider": settings.llm.provider.value,
             "fallback_strategy": settings.llm.fallback_strategy,
             "max_tokens": settings.llm.max_tokens,
-            "temperature": settings.llm.temperature
+            "temperature": settings.llm.temperature,
+            "health_status": "healthy" if llm_health else "unhealthy"
         },
         "agents": {
             "count": len(get_agent_ids()),

@@ -7,6 +7,8 @@ from typing import List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.agents.agent_manager import AgentManager
+    from app.api.websockets import ConnectionManager
+
 from app.agents.interfaces import Message, ConversationContext, ConversationPhase
 from app.models.conversation import Conversation # Assuming conversation model exists
 from app.services.flow_controller import FlowController
@@ -16,13 +18,14 @@ from app.services.decision_maker import DecisionMaker
 class ConversationManager:
     """Manages the lifecycle of a single conversation."""
 
-    def __init__(self, agent_manager: "AgentManager", conversation: Conversation):
+    def __init__(self, agent_manager: "AgentManager", conversation: Conversation, connection_manager: "ConnectionManager" = None):
         self.agent_manager = agent_manager
         self.conversation = conversation
         self.flow_controller = FlowController()
         self.consensus_engine = ConsensusEngine()
         self.decision_maker = DecisionMaker()
         self.conversation_history: List[Message] = []
+        self.connection_manager = connection_manager
 
     async def start(self):
         """Starts the conversation."""

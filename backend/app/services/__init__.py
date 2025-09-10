@@ -11,6 +11,8 @@ from .decision_maker import DecisionMaker
 from .prompt_manager import PromptManager
 from .response_validator import ResponseValidator
 
+from .errors import LLMServiceError
+
 __all__ = [
     "LLMService",
     "LLMServiceFactory",
@@ -20,4 +22,5 @@ __all__ = [
     "DecisionMaker",
     "PromptManager",
     "ResponseValidator",
+    "LLMServiceError",
 ]

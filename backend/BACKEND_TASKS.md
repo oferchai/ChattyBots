@@ -373,6 +373,7 @@ Create a unified service layer for LLM interactions with support for multiple pr
 
 ### Task 3.2: Ollama Integration & Setup
 **Priority: Medium | Estimated Time: 3-4 hours**
+**Status: Done**
 
 **Description:**
 Implement robust Ollama integration for local LLM inference.
@@ -506,6 +507,7 @@ Implement conversation history storage and search capabilities.
 
 ### Task 5.1: REST API Endpoints
 **Priority: High | Estimated Time: 4-6 hours**
+**Status: Done**
 
 **Description:**
 Implement comprehensive REST API endpoints for frontend integration.

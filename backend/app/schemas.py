@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from .models import ConversationStatus, MessageType, SenderType
 
@@ -17,9 +17,10 @@ from .models import ConversationStatus, MessageType, SenderType
 class BaseSchema(BaseModel):
     """Base schema with common configuration."""
     
-    class Config:
-        from_attributes = True
-        use_enum_values = True
+    model_config = ConfigDict(
+        from_attributes = True,
+        use_enum_values = True,
+    )
 
 
 # Agent schemas

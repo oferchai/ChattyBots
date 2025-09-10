@@ -249,6 +249,63 @@ async def delete_conversation(
     db.commit()
 
 
+@router.post("/conversations/{conversation_id}/start", response_model=ConversationResponse)
+async def start_conversation_discussion(
+    conversation_id: uuid.UUID,
+    db: Session = Depends(get_db)
+) -> ConversationResponse:
+    """
+    Start the multi-agent discussion for a given conversation.
+    
+    Args:
+        conversation_id: Unique conversation identifier
+        db: Database session
+        
+    Returns:
+        Updated conversation information
+        
+    Raises:
+        HTTPException: If conversation is not found
+    """
+    # Verify conversation exists
+    conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    # Initialize LLMServiceFactory and AgentManager
+    # Assuming settings are accessible globally or via dependency injection
+    from backend.config import get_settings
+    from app.services.llm_service import LLMServiceFactory
+    from app.agents.agent_manager import AgentManager
+    from app.services.conversation_manager import ConversationManager as ServiceConversationManager
+    
+    settings = get_settings()
+    llm_service_factory = LLMServiceFactory(config=settings.llm.model_dump())
+    agent_manager = AgentManager(llm_service=llm_service_factory)
+    
+    # Create a service-level ConversationManager and start the discussion
+    service_conversation_manager = ServiceConversationManager(
+        agent_manager=agent_manager,
+        conversation=conversation
+    )
+    await service_conversation_manager.start()
+    
+    # Refresh conversation status after discussion
+    db.refresh(conversation)
+    
+    return ConversationResponse(
+        id=conversation.id,
+        goal_description=conversation.goal_description,
+        status=conversation.status,
+        final_summary=conversation.final_summary,
+        created_at=conversation.created_at,
+        updated_at=conversation.updated_at,
+        message_count=conversation.message_count,
+        is_waiting_for_user=conversation.is_waiting_for_user
+    )
+
+
 @router.post("/conversations/{conversation_id}/messages", response_model=MessageResponse, status_code=201)
 async def create_message(
     conversation_id: uuid.UUID,

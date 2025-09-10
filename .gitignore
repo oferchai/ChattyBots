@@ -87,8 +87,7 @@ models/
 checkpoints/
 wandb/
 
-# Gemini
-.gemini/
+
 
 # Database
 data/chatbot.db

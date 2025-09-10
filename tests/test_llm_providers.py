@@ -7,6 +7,7 @@ import httpx
 
 from app.services.providers.ollama_provider import OllamaProvider
 from app.services.providers.openrouter_provider import OpenRouterProvider
+from app.services.errors import LLMServiceError
 
 @pytest.fixture
 def mock_httpx_client():
@@ -53,7 +54,7 @@ async def test_ollama_provider_generate_response_error(mock_httpx_client):
     config = {"base_url": "http://localhost:11434", "model": "llama2"}
     provider = OllamaProvider(config)
 
-    with pytest.raises(httpx.HTTPStatusError):
+    with pytest.raises(LLMServiceError):
         await provider.generate_response("Test prompt for Ollama")
 
 @pytest.mark.asyncio
@@ -94,7 +95,7 @@ async def test_openrouter_provider_generate_response_error(mock_httpx_client):
     config = {"api_key": "test_key", "model": "openai/gpt-3.5-turbo"}
     provider = OpenRouterProvider(config)
 
-    with pytest.raises(httpx.HTTPStatusError):
+    with pytest.raises(LLMServiceError):
         await provider.generate_response("Test prompt for OpenRouter")
 
 def test_openrouter_provider_no_api_key():
